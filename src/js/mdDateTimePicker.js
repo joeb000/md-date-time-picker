@@ -32,6 +32,9 @@ class mdDateTimePicker {
   * @param  {Boolean} inner24 = false                                   [if 24-hour mode and (true), the PM hours shows in an inner dial]
   * @param  {String} prevHandle = <div class="mddtp-prev-handle"></div> [The HTML content of the handle to go to previous month]
   * @param  {String} nextHandle = <div class="mddtp-next-handle"></div> [The HTML content of the handle to go to next month]
+  * 
+  * @param  {moment[]}   includeDays                                    [array of moment dates to render ordered oldest to newest, will override other date inputs (init, past, future,)] [@default = exactly 21 Years ago from init]
+  * @param  {moment[]}   excludeDays                                    [array of moment dates to exlucde from date range] [@default = empty array]
   *
   * @return {Object}                                                    [mdDateTimePicker]
   */
@@ -49,7 +52,9 @@ class mdDateTimePicker {
     autoClose = false,
     inner24 = false,
     prevHandle = '<div class="mddtp-prev-handle"></div>',
-    nextHandle = '<div class="mddtp-next-handle"></div>'
+    nextHandle = '<div class="mddtp-next-handle"></div>',
+    excludeDays = [],
+    includeDays = []
   }) {
     this._type = type
     this._init = init
@@ -65,6 +70,10 @@ class mdDateTimePicker {
     this._inner24 = inner24
     this._prevHandle = prevHandle
     this._nextHandle = nextHandle
+    this._excludeDays = excludeDays
+    this._includeDays = includeDays
+
+    console.log("init!")
 
     /**
     * [dialog selected classes have the same structure as dialog but one level down]
@@ -233,8 +242,18 @@ class mdDateTimePicker {
       this._sDialog[sDialogEls[i]] = document.getElementById(`mddtp-${this._type}__${sDialogEls[i]}`)
     }
 
-    this._sDialog.tDate = this._init.clone()
-    this._sDialog.sDate = this._init.clone()
+    if (this._includeDays.length) {
+      var firstInRange = this._includeDays[0]
+      var lastInRange = this._includeDays[this._includeDays.length-1];
+
+      this._sDialog.tDate = firstInRange.clone();
+      this._sDialog.sDate = firstInRange.clone();
+      this._past = firstInRange.clone()
+      this._future = lastInRange.clone()
+    } else {
+      this._sDialog.tDate = this._init.clone();
+      this._sDialog.sDate = this._init.clone();
+    }
   }
 
   /**
@@ -680,8 +699,8 @@ class mdDateTimePicker {
     this._initViewHolder()
     this._attachEventHandlers()
     this._changeMonth()
-    this._switchToView(subtitle)
-    this._switchToView(title)
+    // this._switchToView(subtitle)
+    // this._switchToView(title)
     this._setButtonText()
   }
 
@@ -699,9 +718,17 @@ class mdDateTimePicker {
       m = future.clone()
     }
     this._sDialog.tDate = m
-    this._initMonth(current, m)
-    this._initMonth(next, moment(this._getMonth(m, 1)))
-    this._initMonth(previous, moment(this._getMonth(m, -1)))
+
+    if (this._includeDays.length) {
+      this._initMonthIncludes(current, m)
+      this._initMonthIncludes(next, moment(this._getMonth(m, 1)))
+      this._initMonthIncludes(previous, moment(this._getMonth(m, -1)))
+    } else {
+      this._initMonth(current, m)
+      this._initMonth(next, moment(this._getMonth(m, 1)))
+      this._initMonth(previous, moment(this._getMonth(m, -1)))
+    }
+
     this._toMoveMonth()
   }
 
@@ -723,9 +750,18 @@ class mdDateTimePicker {
     let past = firstDayOfMonth
     const cellClass = 'mddtp-picker__cell'
     let future = lastDayOfMonth
+    let disableDays = []
     if (moment().isSame(m, 'month')) {
       today = parseInt(moment().format('D'), 10)
       today += firstDayOfMonth - 1
+    }
+    for (var i = 0; i < this._excludeDays.length; i++) {
+      var day = this._excludeDays[i]
+      if (day.isSame(m, 'month')) {
+        var d = parseInt(day.format('D'), 10);
+        d += firstDayOfMonth - 1;
+        disableDays.push(d)
+      }
     }
     if (this._past.isSame(m, 'month')) {
       past = parseInt(this._past.format('D'), 10)
@@ -746,6 +782,8 @@ class mdDateTimePicker {
       if ((i >= firstDayOfMonth) && (i <= lastDayOfMonth)) {
         if (i > future || i < past) {
           cell.classList.add(`${cellClass}--disabled`)
+        } else if (disableDays.includes(i)) {
+          cell.classList.add(cellClass + '--disabled')
         } else {
           cell.classList.add(cellClass)
         }
@@ -769,6 +807,71 @@ class mdDateTimePicker {
     this._addCellClickEvent(tr)
   }
 
+  _initMonthIncludes (view, m) {
+    const displayMonth = m.format('MMMM YYYY')
+    // get the .mddtp-picker__month element using innerDivs[0]
+    const innerDivs = view.getElementsByTagName('div')
+    this._fillText(innerDivs[0], displayMonth)
+    const docfrag = document.createDocumentFragment()
+    // get the .mddtp-picker__tr element using innerDivs[3]
+    const tr = innerDivs[3]
+    const firstDayOfMonth = moment.weekdays(true).indexOf(moment.weekdays(false, moment(m).date(1).day()))
+    /*
+    * @netTrek - first day of month dependented from moment.locale
+    */
+    let today = -1
+    let selected = -1
+    const lastDayOfMonth = parseInt(moment(m).endOf('month').format('D'), 10) + firstDayOfMonth - 1
+    const cellClass = 'mddtp-picker__cell'
+    let includeDay = [];
+
+    if (moment().isSame(m, 'month')) {
+      today = parseInt(moment().format('D'), 10)
+      today += firstDayOfMonth - 1
+    }
+    for (var i = 0; i < this._includeDays.length; i++) {
+      let day = this._includeDays[i]
+      if (day.isSame(m, 'month')) {
+        let d = parseInt(day.format('D'), 10);
+        d += firstDayOfMonth - 1;
+        includeDay.push(d)
+      }
+    }
+    
+    if (this._sDialog.sDate.isSame(m, 'month')) {
+      selected = parseInt(moment(m).format('D'), 10)
+      selected += firstDayOfMonth - 1
+    }
+    for (let i = 0; i < 42; i++) {
+      // create cell
+      const cell = document.createElement('span')
+      const currentDay = i - firstDayOfMonth + 1
+      if ((i >= firstDayOfMonth) && (i <= lastDayOfMonth)) {
+        if (!includeDay.includes(i)) {
+          cell.classList.add(`${cellClass}--disabled`)
+        } else {
+          cell.classList.add(cellClass)
+          if (selected === i) {
+            cell.classList.add(cellClass + '--selected')
+            cell.id = 'mddtp-date__selected';
+          }
+        }
+        this._fillText(cell, currentDay)
+      }
+      if (today === i) {
+        cell.classList.add(`${cellClass}--today`)
+      }
+      
+      docfrag.appendChild(cell)
+    }
+    // empty the tr
+    while (tr.lastChild) {
+      tr.removeChild(tr.lastChild)
+    }
+    // set inner html accordingly
+    tr.appendChild(docfrag)
+    this._addCellClickEvent(tr)
+  }
   /**
   * [_initYear Adds year elements]
   *
