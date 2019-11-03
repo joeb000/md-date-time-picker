@@ -72,6 +72,7 @@
     * @param  {String} prevHandle = <div class="mddtp-prev-handle"></div> [The HTML content of the handle to go to previous month]
     * @param  {String} nextHandle = <div class="mddtp-next-handle"></div> [The HTML content of the handle to go to next month]
     * 
+    * @param  {String}   modal                                    [if set, create container inside a modal with an id of this string]
     * @param  {moment[]}   includeDays                                    [array of moment dates to render ordered oldest to newest, will override other date inputs (init, past, future,)] [@default = exactly 21 Years ago from init]
     * @param  {moment[]}   excludeDays                                    [array of moment dates to exlucde from date range] [@default = empty array]
     * @param  {Number[]}   excludeDaysOfWeek                     [array of days of the week to exclude (Sunday=0, Monday=1...)] [@default = empty array]
@@ -111,7 +112,8 @@
           _ref$excludeDaysOfWee = _ref.excludeDaysOfWeek,
           excludeDaysOfWeek = _ref$excludeDaysOfWee === undefined ? [] : _ref$excludeDaysOfWee,
           _ref$includeDays = _ref.includeDays,
-          includeDays = _ref$includeDays === undefined ? [] : _ref$includeDays;
+          includeDays = _ref$includeDays === undefined ? [] : _ref$includeDays,
+          modal = _ref.modal;
 
       _classCallCheck(this, mdDateTimePicker);
 
@@ -132,7 +134,10 @@
       this._excludeDays = excludeDays;
       this._excludeDaysOfWeek = excludeDaysOfWeek;
       this._includeDays = includeDays;
+      this._modal = modal;
+      this._useModal = modal ? !0 : !1;
 
+      console.log(this._useModal);
       /**
       * [dialog selected classes have the same structure as dialog but one level down]
       * @type {Object}
@@ -144,12 +149,14 @@
       */
       this._sDialog = {};
 
-      this.displayClasses = {
-        show: 'zoomIn',
-        hide: 'zoomOut'
+      this.displayClasses = {}
+      // show: 'zoomIn',
+      // hide: 'zoomOut'
 
-        // attach the dialog if not present
-      };if (typeof document !== 'undefined' && !document.getElementById('mddtp-picker__' + this._type)) {
+
+      // attach the dialog if not present
+      //if (typeof document !== 'undefined' && !document.getElementById(`mddtp-picker__${this._type}`)) {
+      ;if (typeof document !== 'undefined') {
         this._buildDialog();
       }
     }
@@ -223,6 +230,7 @@
       value: function _selectDialog() {
         // now do what you normally would do
         this._sDialog.picker = document.getElementById('mddtp-picker__' + [this._type]);
+
         /**
         * [sDialogEls stores all inner components of the selected dialog or sDialog to be later getElementById]
         *
@@ -255,6 +263,15 @@
         var _this = this,
             me = this;
 
+        if (me._useModal) {
+          console.log("me use modal");
+          var parent = me._sDialog.picker.parentNode;
+          console.log(parent);
+          var wrapper = document.createElement('div');
+          wrapper.id = me._modal;
+          parent.replaceChild(wrapper, this._sDialog.picker);
+          wrapper.appendChild(this._sDialog.picker);
+        }
         mdDateTimePicker.dialog.state = !0;
         this._sDialog.picker.classList.remove('mddtp-picker--inactive');
         this._sDialog.picker.classList.add(this.displayClasses.show);
@@ -315,7 +332,15 @@
           // remove portrait mode
           me._sDialog.picker.classList.remove('mddtp-picker--portrait');
           me._sDialog.picker.classList.remove(_this2.displayClasses.hide);
+          if (me._useModal) {
+            var modalElement = document.getElementById(me._modal),
+                parent = modalElement.parentNode;
+
+            // parent.replaceChild(modalElement, me._sDialog.picker)
+            modalElement.remove();
+          }
           me._sDialog.picker.classList.add(inactive);
+
           // clone elements and add them again to clear events attached to them
           var pickerClone = picker.cloneNode(!0);
           picker.parentNode.replaceChild(pickerClone, picker);
@@ -324,9 +349,11 @@
     }, {
       key: '_buildDialog',
       value: function _buildDialog() {
+        console.log("building dialog");
         var type = this._type,
             docfrag = document.createDocumentFragment(),
             container = document.createElement('div'),
+            modalWrapper = document.createElement('div'),
             header = document.createElement('div'),
             body = document.createElement('div'),
             action = document.createElement('div'),
@@ -334,6 +361,7 @@
             ok = document.createElement('button');
 
         // ... add properties to them
+
         container.id = 'mddtp-picker__' + type;
         container.classList.add('mddtp-picker');
         container.classList.add('mddtp-picker-' + type);
@@ -343,6 +371,7 @@
         this._addClass(header, 'header');
         // add header to container
         container.appendChild(header);
+
         this._addClass(body, 'body');
         body.appendChild(action);
         // add body to container
@@ -509,6 +538,7 @@
         // add actions to body
         body.appendChild(action);
         docfrag.appendChild(container);
+
         // add the container to the end of body
         document.getElementsByTagName('body').item(0).appendChild(docfrag);
       }

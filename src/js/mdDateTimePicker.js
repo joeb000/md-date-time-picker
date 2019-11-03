@@ -33,6 +33,7 @@ class mdDateTimePicker {
   * @param  {String} prevHandle = <div class="mddtp-prev-handle"></div> [The HTML content of the handle to go to previous month]
   * @param  {String} nextHandle = <div class="mddtp-next-handle"></div> [The HTML content of the handle to go to next month]
   * 
+  * @param  {String}   modal                                    [if set, create container inside a modal with an id of this string]
   * @param  {moment[]}   includeDays                                    [array of moment dates to render ordered oldest to newest, will override other date inputs (init, past, future,)] [@default = exactly 21 Years ago from init]
   * @param  {moment[]}   excludeDays                                    [array of moment dates to exlucde from date range] [@default = empty array]
   * @param  {Number[]}   excludeDaysOfWeek                     [array of days of the week to exclude (Sunday=0, Monday=1...)] [@default = empty array]
@@ -57,7 +58,8 @@ class mdDateTimePicker {
     nextHandle = '<div class="mddtp-next-handle"></div>',
     excludeDays = [],
     excludeDaysOfWeek =[],
-    includeDays = []
+    includeDays = [],
+    modal
   }) {
     this._type = type
     this._init = init
@@ -76,7 +78,10 @@ class mdDateTimePicker {
     this._excludeDays = excludeDays
     this._excludeDaysOfWeek = excludeDaysOfWeek
     this._includeDays = includeDays
+    this._modal = modal
+    this._useModal = modal ? true :false
 
+    console.log(this._useModal)
     /**
     * [dialog selected classes have the same structure as dialog but one level down]
     * @type {Object}
@@ -89,13 +94,14 @@ class mdDateTimePicker {
     this._sDialog = {}
 
     this.displayClasses = {
-      show: 'zoomIn',
-      hide: 'zoomOut'
+      // show: 'zoomIn',
+      // hide: 'zoomOut'
     }
 
     // attach the dialog if not present
-    if (typeof document !== 'undefined' && !document.getElementById(`mddtp-picker__${this._type}`)) {
-      this._buildDialog()
+    //if (typeof document !== 'undefined' && !document.getElementById(`mddtp-picker__${this._type}`)) {
+    if (typeof document !== 'undefined') {
+        this._buildDialog()
     }
   }
 
@@ -231,6 +237,7 @@ class mdDateTimePicker {
   _selectDialog () {
     // now do what you normally would do
     this._sDialog.picker = document.getElementById(`mddtp-picker__${[this._type]}`)
+
     /**
     * [sDialogEls stores all inner components of the selected dialog or sDialog to be later getElementById]
     *
@@ -266,6 +273,15 @@ class mdDateTimePicker {
   */
   _showDialog () {
     const me = this
+    if (me._useModal) {
+      console.log("me use modal")
+      let parent = me._sDialog.picker.parentNode
+      console.log(parent)
+      let wrapper = document.createElement('div');
+      wrapper.id = me._modal
+      parent.replaceChild(wrapper, this._sDialog.picker);
+      wrapper.appendChild(this._sDialog.picker)
+    }
     mdDateTimePicker.dialog.state = true
     this._sDialog.picker.classList.remove('mddtp-picker--inactive')
     this._sDialog.picker.classList.add(this.displayClasses.show)
@@ -329,7 +345,14 @@ class mdDateTimePicker {
       // remove portrait mode
       me._sDialog.picker.classList.remove('mddtp-picker--portrait')
       me._sDialog.picker.classList.remove(this.displayClasses.hide)
+      if (me._useModal){
+        let modalElement = document.getElementById(me._modal)
+        let parent = modalElement.parentNode
+        // parent.replaceChild(modalElement, me._sDialog.picker)
+        modalElement.remove()
+      }
       me._sDialog.picker.classList.add(inactive)
+
       // clone elements and add them again to clear events attached to them
       const pickerClone = picker.cloneNode(true)
       picker.parentNode.replaceChild(pickerClone, picker)
@@ -342,11 +365,16 @@ class mdDateTimePicker {
   * @method _buildDateDialog
   *
   */
-  _buildDialog () {
+ _buildDialog () {
+    console.log("building dialog")
     const type = this._type
     const docfrag = document.createDocumentFragment()
     // outer most container of the picker
     const container = document.createElement('div')
+
+    //if you want a div to use as modal background
+    const modalWrapper = document.createElement('div')
+
     // header container of the picker
     const header = document.createElement('div')
     // body container of the picker
@@ -356,6 +384,7 @@ class mdDateTimePicker {
     const cancel = document.createElement('button')
     const ok = document.createElement('button')
     // ... add properties to them
+    
     container.id = `mddtp-picker__${type}`
     container.classList.add('mddtp-picker')
     container.classList.add(`mddtp-picker-${type}`)
@@ -365,6 +394,8 @@ class mdDateTimePicker {
     this._addClass(header, 'header')
     // add header to container
     container.appendChild(header)
+
+
     this._addClass(body, 'body')
     body.appendChild(action)
     // add body to container
@@ -528,7 +559,8 @@ class mdDateTimePicker {
     action.appendChild(ok)
     // add actions to body
     body.appendChild(action)
-    docfrag.appendChild(container)
+    docfrag.appendChild(container);
+    
     // add the container to the end of body
     document.getElementsByTagName('body').item(0).appendChild(docfrag)
   }
