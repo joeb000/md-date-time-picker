@@ -149,14 +149,13 @@
       */
       this._sDialog = {};
 
-      this.displayClasses = {}
-      // show: 'zoomIn',
-      // hide: 'zoomOut'
+      this.displayClasses = {
+        show: 'zoomIn',
+        hide: 'zoomOut'
 
-
-      // attach the dialog if not present
-      //if (typeof document !== 'undefined' && !document.getElementById(`mddtp-picker__${this._type}`)) {
-      ;if (typeof document !== 'undefined') {
+        // attach the dialog if not present
+        //if (typeof document !== 'undefined' && !document.getElementById(`mddtp-picker__${this._type}`)) {
+      };if (typeof document !== 'undefined') {
         this._buildDialog();
       }
     }
@@ -263,14 +262,19 @@
         var _this = this,
             me = this;
 
-        if (me._useModal) {
-          console.log("me use modal");
-          var parent = me._sDialog.picker.parentNode;
-          console.log(parent);
-          var wrapper = document.createElement('div');
-          wrapper.id = me._modal;
-          parent.replaceChild(wrapper, this._sDialog.picker);
-          wrapper.appendChild(this._sDialog.picker);
+        console.log('show');
+        if (this._useModal) {
+          console.log("USE");
+          if (!this._sDialog.wrapper) {
+            console.log("me use modal");
+            var parent = me._sDialog.picker.parentNode;
+            this._sDialog.wrapper = document.createElement('div');
+            this._sDialog.wrapper.id = me._modal;
+            parent.replaceChild(this._sDialog.wrapper, this._sDialog.picker);
+            this._sDialog.wrapper.appendChild(this._sDialog.picker);
+          } else {
+            this._sDialog.wrapper.classList.remove('mddtp-picker--inactive');
+          }
         }
         mdDateTimePicker.dialog.state = !0;
         this._sDialog.picker.classList.remove('mddtp-picker--inactive');
@@ -333,11 +337,7 @@
           me._sDialog.picker.classList.remove('mddtp-picker--portrait');
           me._sDialog.picker.classList.remove(_this2.displayClasses.hide);
           if (me._useModal) {
-            var modalElement = document.getElementById(me._modal),
-                parent = modalElement.parentNode;
-
-            // parent.replaceChild(modalElement, me._sDialog.picker)
-            modalElement.remove();
+            me._sDialog.wrapper.classList.add(inactive);
           }
           me._sDialog.picker.classList.add(inactive);
 

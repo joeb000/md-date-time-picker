@@ -94,8 +94,8 @@ class mdDateTimePicker {
     this._sDialog = {}
 
     this.displayClasses = {
-      // show: 'zoomIn',
-      // hide: 'zoomOut'
+      show: 'zoomIn',
+      hide: 'zoomOut'
     }
 
     // attach the dialog if not present
@@ -273,14 +273,19 @@ class mdDateTimePicker {
   */
   _showDialog () {
     const me = this
-    if (me._useModal) {
-      console.log("me use modal")
-      let parent = me._sDialog.picker.parentNode
-      console.log(parent)
-      let wrapper = document.createElement('div');
-      wrapper.id = me._modal
-      parent.replaceChild(wrapper, this._sDialog.picker);
-      wrapper.appendChild(this._sDialog.picker)
+    console.log('show')
+    if (this._useModal) {
+      console.log("USE")
+      if (!this._sDialog.wrapper) {
+        console.log("me use modal")
+        let parent = me._sDialog.picker.parentNode
+        this._sDialog.wrapper = document.createElement('div');
+        this._sDialog.wrapper.id = me._modal
+        parent.replaceChild(this._sDialog.wrapper, this._sDialog.picker);
+        this._sDialog.wrapper.appendChild(this._sDialog.picker)
+      } else {
+        this._sDialog.wrapper.classList.remove('mddtp-picker--inactive')
+      }
     }
     mdDateTimePicker.dialog.state = true
     this._sDialog.picker.classList.remove('mddtp-picker--inactive')
@@ -346,10 +351,7 @@ class mdDateTimePicker {
       me._sDialog.picker.classList.remove('mddtp-picker--portrait')
       me._sDialog.picker.classList.remove(this.displayClasses.hide)
       if (me._useModal){
-        let modalElement = document.getElementById(me._modal)
-        let parent = modalElement.parentNode
-        // parent.replaceChild(modalElement, me._sDialog.picker)
-        modalElement.remove()
+        me._sDialog.wrapper.classList.add(inactive)
       }
       me._sDialog.picker.classList.add(inactive)
 

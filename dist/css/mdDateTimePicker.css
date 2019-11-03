@@ -1181,7 +1181,7 @@
 .mddtp-picker.animated,
 .mddtp-picker__viewHolder.animated,
 .mddtp-picker__years.animated {
-  animation-duration: .3s;
+  animation-duration: 0s;
   animation-timing-function: cubic-bezier(0.42, 0, 0.58, 1);
   animation-fill-mode: both; }
 

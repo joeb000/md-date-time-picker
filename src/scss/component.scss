@@ -433,7 +433,7 @@
     animation-name: zoomOut;
   }
   &.animated {
-    animation-duration: .3s;
+    animation-duration: 0s;
     animation-timing-function: cubic-bezier(.42, 0, .58, 1);
     animation-fill-mode: both;
   }

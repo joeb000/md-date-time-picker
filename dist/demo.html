@@ -57,20 +57,21 @@
       init: moment(),
       past: moment(),
       future: moment('2020-02-20', 'YYYY-MM-DD'),
-      excludeDaysOfWeek: [0,1]
+      excludeDaysOfWeek: [0,1],
+      modal: 'dp-wrap'
     });
-    // var y = new mdDateTimePicker.default({
-    //   type: 'date',
-    //   includeDays: [ moment('2016-02-29', 'YYYY-MM-DD') ]
+    var y = new mdDateTimePicker.default({
+      type: 'date',
+      includeDays: [ moment('2016-02-29', 'YYYY-MM-DD') ]
 
-    // });
+    });
    
     document.getElementById('trigger').addEventListener('click', function() {
       x.toggle();
     });
-    // document.getElementById('trigger2').addEventListener('click', function() {
-    //   y.toggle();
-    // });
+    document.getElementById('trigger2').addEventListener('click', function() {
+      y.toggle();
+    });
 
 
     // dispatch event test
