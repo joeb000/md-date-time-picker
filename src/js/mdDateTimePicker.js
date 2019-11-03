@@ -35,6 +35,8 @@ class mdDateTimePicker {
   * 
   * @param  {moment[]}   includeDays                                    [array of moment dates to render ordered oldest to newest, will override other date inputs (init, past, future,)] [@default = exactly 21 Years ago from init]
   * @param  {moment[]}   excludeDays                                    [array of moment dates to exlucde from date range] [@default = empty array]
+  * @param  {Number[]}   excludeDaysOfWeek                     [array of days of the week to exclude (Sunday=0, Monday=1...)] [@default = empty array]
+
   *
   * @return {Object}                                                    [mdDateTimePicker]
   */
@@ -54,6 +56,7 @@ class mdDateTimePicker {
     prevHandle = '<div class="mddtp-prev-handle"></div>',
     nextHandle = '<div class="mddtp-next-handle"></div>',
     excludeDays = [],
+    excludeDaysOfWeek =[],
     includeDays = []
   }) {
     this._type = type
@@ -71,9 +74,8 @@ class mdDateTimePicker {
     this._prevHandle = prevHandle
     this._nextHandle = nextHandle
     this._excludeDays = excludeDays
+    this._excludeDaysOfWeek = excludeDaysOfWeek
     this._includeDays = includeDays
-
-    console.log("init!")
 
     /**
     * [dialog selected classes have the same structure as dialog but one level down]
@@ -784,18 +786,25 @@ class mdDateTimePicker {
           cell.classList.add(`${cellClass}--disabled`)
         } else if (disableDays.includes(i)) {
           cell.classList.add(cellClass + '--disabled')
+        } else if (this._excludeDaysOfWeek.includes(i%7)) {
+            cell.classList.add(cellClass + '--disabled')
+            if (selected === i) {
+              //if selected is on a disabled day, make selected next available day
+              selected++;
+            }
         } else {
           cell.classList.add(cellClass)
+          if (selected === i) {
+            cell.classList.add(`${cellClass}--selected`)
+            cell.id = 'mddtp-date__selected'
+          }
+        }
+        if (today === i) {
+          cell.classList.add(`${cellClass}--today`)
         }
         this._fillText(cell, currentDay)
       }
-      if (today === i) {
-        cell.classList.add(`${cellClass}--today`)
-      }
-      if (selected === i) {
-        cell.classList.add(`${cellClass}--selected`)
-        cell.id = 'mddtp-date__selected'
-      }
+
       docfrag.appendChild(cell)
     }
     // empty the tr

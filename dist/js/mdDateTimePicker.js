@@ -74,7 +74,8 @@
     * 
     * @param  {moment[]}   includeDays                                    [array of moment dates to render ordered oldest to newest, will override other date inputs (init, past, future,)] [@default = exactly 21 Years ago from init]
     * @param  {moment[]}   excludeDays                                    [array of moment dates to exlucde from date range] [@default = empty array]
-    *
+    * @param  {Number[]}   excludeDaysOfWeek                     [array of days of the week to exclude (Sunday=0, Monday=1...)] [@default = empty array]
+     *
     * @return {Object}                                                    [mdDateTimePicker]
     */
     function mdDateTimePicker(_ref) {
@@ -107,6 +108,8 @@
           nextHandle = _ref$nextHandle === undefined ? '<div class="mddtp-next-handle"></div>' : _ref$nextHandle,
           _ref$excludeDays = _ref.excludeDays,
           excludeDays = _ref$excludeDays === undefined ? [] : _ref$excludeDays,
+          _ref$excludeDaysOfWee = _ref.excludeDaysOfWeek,
+          excludeDaysOfWeek = _ref$excludeDaysOfWee === undefined ? [] : _ref$excludeDaysOfWee,
           _ref$includeDays = _ref.includeDays,
           includeDays = _ref$includeDays === undefined ? [] : _ref$includeDays;
 
@@ -127,9 +130,8 @@
       this._prevHandle = prevHandle;
       this._nextHandle = nextHandle;
       this._excludeDays = excludeDays;
+      this._excludeDaysOfWeek = excludeDaysOfWeek;
       this._includeDays = includeDays;
-
-      console.log("init!");
 
       /**
       * [dialog selected classes have the same structure as dialog but one level down]
@@ -769,18 +771,25 @@
               cell.classList.add(cellClass + '--disabled');
             } else if (disableDays.includes(_i2)) {
               cell.classList.add(cellClass + '--disabled');
+            } else if (this._excludeDaysOfWeek.includes(_i2 % 7)) {
+              cell.classList.add(cellClass + '--disabled');
+              if (selected === _i2) {
+                //if selected is on a disabled day, make selected next available day
+                selected++;
+              }
             } else {
               cell.classList.add(cellClass);
+              if (selected === _i2) {
+                cell.classList.add(cellClass + '--selected');
+                cell.id = 'mddtp-date__selected';
+              }
+            }
+            if (today === _i2) {
+              cell.classList.add(cellClass + '--today');
             }
             this._fillText(cell, currentDay);
           }
-          if (today === _i2) {
-            cell.classList.add(cellClass + '--today');
-          }
-          if (selected === _i2) {
-            cell.classList.add(cellClass + '--selected');
-            cell.id = 'mddtp-date__selected';
-          }
+
           docfrag.appendChild(cell);
         }
         // empty the tr

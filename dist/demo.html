@@ -53,7 +53,12 @@
     moment.locale(locale);
     // rest of the demo logic
     var x = new mdDateTimePicker.default({
-      type: 'date'
+      type: 'date',
+      init: moment(),
+      past: moment(),
+      future: moment('2020-02-20', 'YYYY-MM-DD'),
+      excludeDaysOfWeek: [0,1]
+
     });
     var y = new mdDateTimePicker.default({
       type: 'date',
