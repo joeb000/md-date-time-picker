@@ -71,7 +71,9 @@
     * @param  {Boolean} inner24 = false                                   [if 24-hour mode and (true), the PM hours shows in an inner dial]
     * @param  {String} prevHandle = <div class="mddtp-prev-handle"></div> [The HTML content of the handle to go to previous month]
     * @param  {String} nextHandle = <div class="mddtp-next-handle"></div> [The HTML content of the handle to go to next month]
-    *
+    * @param  {moment[]}   includeDays                                    [array of moment dates to render ordered oldest to newest, will override other date inputs (init, past, future,)] [@default = exactly 21 Years ago from init]
+    * @param  {moment[]}   excludeDays                                    [array of moment dates to exlucde from date range] [@default = empty array]
+
     * @return {Object}                                                    [mdDateTimePicker]
     */
     function mdDateTimePicker(_ref) {
@@ -101,7 +103,13 @@
           _ref$prevHandle = _ref.prevHandle,
           prevHandle = _ref$prevHandle === undefined ? '<div class="mddtp-prev-handle"></div>' : _ref$prevHandle,
           _ref$nextHandle = _ref.nextHandle,
-          nextHandle = _ref$nextHandle === undefined ? '<div class="mddtp-next-handle"></div>' : _ref$nextHandle;
+          nextHandle = _ref$nextHandle === undefined ? '<div class="mddtp-next-handle"></div>' : _ref$nextHandle,
+
+          _ref$excludeDays = _ref.excludeDays,
+          excludeDays = _ref$excludeDays === undefined ? [] : _ref$excludeDays,
+          _ref$includeDays = _ref.includeDays,
+          includeDays = _ref$includeDays === undefined ? [] : _ref$includeDays
+          ;
 
       _classCallCheck(this, mdDateTimePicker);
 
@@ -120,6 +128,9 @@
       this._prevHandle = prevHandle;
       this._nextHandle = nextHandle;
 
+      this._excludeDays = excludeDays;
+      this._includeDays = includeDays;
+      
       /**
       * [dialog selected classes have the same structure as dialog but one level down]
       * @type {Object}
@@ -222,8 +233,18 @@
           this._sDialog[sDialogEls[i]] = document.getElementById('mddtp-' + this._type + '__' + sDialogEls[i]);
         }
 
-        this._sDialog.tDate = this._init.clone();
-        this._sDialog.sDate = this._init.clone();
+        if (this._includeDays.length) {
+          var firstInRange = this._includeDays[0]
+          var lastInRange = this._includeDays[this._includeDays.length-1];
+
+          this._sDialog.tDate = firstInRange.clone();
+          this._sDialog.sDate = firstInRange.clone();
+          this._past = firstInRange.clone()
+          this._future = lastInRange.clone()
+        } else {
+          this._sDialog.tDate = this._init.clone();
+          this._sDialog.sDate = this._init.clone();
+        }
       }
     }, {
       key: '_showDialog',
@@ -660,8 +681,8 @@
         this._initViewHolder();
         this._attachEventHandlers();
         this._changeMonth();
-        this._switchToView(subtitle);
-        this._switchToView(title);
+        // this._switchToView(subtitle);
+        // this._switchToView(title);
         this._setButtonText();
       }
     }, {
@@ -681,9 +702,16 @@
           m = future.clone();
         }
         this._sDialog.tDate = m;
-        this._initMonth(current, m);
-        this._initMonth(next, (0, _moment2.default)(this._getMonth(m, 1)));
-        this._initMonth(previous, (0, _moment2.default)(this._getMonth(m, -1)));
+        if (this._includeDays.length) {
+          this._initMonthIncludes(current, m);
+          this._initMonthIncludes(next, (0, _moment2.default)(this._getMonth(m, 1)));
+          this._initMonthIncludes(previous, (0, _moment2.default)(this._getMonth(m, -1)));
+        } else {
+          this._initMonth(current, m);
+          this._initMonth(next, (0, _moment2.default)(this._getMonth(m, 1)));
+          this._initMonth(previous, (0, _moment2.default)(this._getMonth(m, -1)));
+        }
+        
         this._toMoveMonth();
       }
     }, {
@@ -702,11 +730,20 @@
             lastDayOfMonth = parseInt((0, _moment2.default)(m).endOf('month').format('D'), 10) + firstDayOfMonth - 1,
             past = firstDayOfMonth,
             cellClass = 'mddtp-picker__cell',
-            future = lastDayOfMonth;
+            future = lastDayOfMonth,
+            disableDays = [];
 
         if ((0, _moment2.default)().isSame(m, 'month')) {
           today = parseInt((0, _moment2.default)().format('D'), 10);
           today += firstDayOfMonth - 1;
+        }
+        for (var i = 0; i < this._excludeDays.length; i++) {
+          var day = this._excludeDays[i]
+          if (day.isSame(m, 'month')) {
+            var d = parseInt(day.format('D'), 10);
+            d += firstDayOfMonth - 1;
+            disableDays.push(d)
+          }
         }
         if (this._past.isSame(m, 'month')) {
           past = parseInt(this._past.format('D'), 10);
@@ -726,6 +763,8 @@
 
           if (i >= firstDayOfMonth && i <= lastDayOfMonth) {
             if (i > future || i < past) {
+              cell.classList.add(cellClass + '--disabled');
+            } else if (disableDays.includes(i)) {
               cell.classList.add(cellClass + '--disabled');
             } else {
               cell.classList.add(cellClass);
@@ -749,7 +788,82 @@
         tr.appendChild(docfrag);
         this._addCellClickEvent(tr);
       }
-    }, {
+    }, 
+    {
+      key: '_initMonthIncludes',
+      value: function _initMonthIncludes(view, m) {
+        var displayMonth = m.format('MMMM YYYY'),
+            innerDivs = view.getElementsByTagName('div');
+
+        this._fillText(innerDivs[0], displayMonth);
+
+        var docfrag = document.createDocumentFragment(),
+            tr = innerDivs[3],
+            firstDayOfMonth = _moment2.default.weekdays(!0).indexOf(_moment2.default.weekdays(!1, (0, _moment2.default)(m).date(1).day())),
+            today = -1,
+            selected = -1,
+            lastDayOfMonth = parseInt((0, _moment2.default)(m).endOf('month').format('D'), 10) + firstDayOfMonth - 1,
+            past = firstDayOfMonth,
+            cellClass = 'mddtp-picker__cell',
+            future = lastDayOfMonth,
+            includeDay = [];
+
+        if ((0, _moment2.default)().isSame(m, 'month')) {
+          today = parseInt((0, _moment2.default)().format('D'), 10);
+          today += firstDayOfMonth - 1;
+        }
+        for (var i = 0; i < this._includeDays.length; i++) {
+          var day = this._includeDays[i]
+          if (day.isSame(m, 'month')) {
+            var d = parseInt(day.format('D'), 10);
+            d += firstDayOfMonth - 1;
+            includeDay.push(d)
+          }
+        }
+        // if (this._past.isSame(m, 'month')) {
+        //   past = parseInt(this._past.format('D'), 10);
+        //   past += firstDayOfMonth - 1;
+        // }
+        // if (this._future.isSame(m, 'month')) {
+        //   future = parseInt(this._future.format('D'), 10);
+        //   future += firstDayOfMonth - 1;
+        // }
+        if (this._sDialog.sDate.isSame(m, 'month')) {
+          selected = parseInt((0, _moment2.default)(m).format('D'), 10);
+          selected += firstDayOfMonth - 1;
+        }
+        for (var i = 0; i < 42; i++) {
+          var cell = document.createElement('span'),
+              currentDay = i - firstDayOfMonth + 1;
+
+          if (i >= firstDayOfMonth && i <= lastDayOfMonth) {
+            if (!includeDay.includes(i)) {
+              cell.classList.add(cellClass + '--disabled');
+            } else {
+              cell.classList.add(cellClass);
+              if (selected === i) {
+                cell.classList.add(cellClass + '--selected');
+                cell.id = 'mddtp-date__selected';
+              }
+            }
+            this._fillText(cell, currentDay);
+          }
+          if (today === i) {
+            cell.classList.add(cellClass + '--today');
+          }
+
+          docfrag.appendChild(cell);
+        }
+        // empty the tr
+        while (tr.lastChild) {
+          tr.removeChild(tr.lastChild);
+        }
+        // set inner html accordingly
+        tr.appendChild(docfrag);
+        this._addCellClickEvent(tr);
+      }
+    },
+    {
       key: '_initYear',
       value: function _initYear() {
         var years = this._sDialog.years,
